@@ -185,7 +185,12 @@ app.get("/api/stats", (req, res) => {
 // Serve built dashboard
 app.use(express.static(path.join(__dirname, "dashboard/dist")));
 app.get("*", (_req, res) => {
-  res.sendFile(path.join(__dirname, "dashboard/dist/index.html"));
+  const indexPath = path.join(__dirname, "dashboard/dist/index.html");
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.status(503).send("Dashboard not built. Run: npm run build");
+  }
 });
 
 app.listen(PORT, () => {

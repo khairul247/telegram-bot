@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "build": "npm install --prefix dashboard && npm run build --prefix dashboard"
+    "build": "cd dashboard && npm install && npm run build"
   },
   "dependencies": {
     "cors": "^2.8.5",

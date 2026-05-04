@@ -2,7 +2,7 @@ services:
   - type: web
     name: telegram-bot
     runtime: node
-    buildCommand: npm install && npm install --prefix dashboard && npm run build --prefix dashboard
+    buildCommand: npm install && cd dashboard && npm install && npm run build
     startCommand: npm start
     envVars:
       - key: BOT_TOKEN
