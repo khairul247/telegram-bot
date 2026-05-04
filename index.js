@@ -260,15 +260,16 @@ app.post("/api/orders/:id/verify", (req, res) => {
 
   if (action === "approve") {
     if (GROUP_ID) {
-      Promise.all([
-        bot.addChatMember(GROUP_ID, order.customerId).catch(() => null),
-        bot.createChatInviteLink(GROUP_ID, { member_limit: 1 }).catch(() => null),
-      ]).then(([, invite]) => {
-        const link = invite?.invite_link;
-        const groupLine = link ? `\n\n👥 Join our group: ${link}` : "\n\n👥 You've been added to our group!";
+      bot.createChatInviteLink(GROUP_ID, { member_limit: 1 }).then(invite => {
         bot.sendMessage(
           order.customerId,
-          `🎉 Great news! Your payment for *${id}* has been *verified* and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}${groupLine}`,
+          `🎉 Great news! Your payment for *${id}* has been *verified* and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}\n\n👥 Join our group here (one-time link): ${invite.invite_link}`,
+          { parse_mode: "Markdown" }
+        );
+      }).catch(() => {
+        bot.sendMessage(
+          order.customerId,
+          `🎉 Great news! Your payment for *${id}* has been *verified* and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}`,
           { parse_mode: "Markdown" }
         );
       });
