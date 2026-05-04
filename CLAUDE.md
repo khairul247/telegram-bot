@@ -114,6 +114,7 @@ CREATE TABLE settings (
 ```
 BOT_TOKEN=        # Telegram bot token from @BotFather
 ADMIN_USERNAME=   # Admin's Telegram username (shown to customers via "Ask Directly")
+GROUP_ID=         # Telegram group ID (e.g. -1001234567890) — customers are added on approval
 PORT=3001         # Express server port
 ```
 

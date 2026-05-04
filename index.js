@@ -10,6 +10,7 @@ require('dotenv').config()
 // ─── CONFIG ────────────────────────────────────────────────────────────────
 const BOT_TOKEN = process.env.BOT_TOKEN || "YOUR_BOT_TOKEN_HERE";
 const ADMIN_TELEGRAM_USERNAME = process.env.ADMIN_USERNAME || "yourusername";
+const GROUP_ID = process.env.GROUP_ID || null;
 const PORT = process.env.PORT || 3001;
 const UPLOADS_DIR = path.join(__dirname, "uploads");
 const DB_DIR = path.join(__dirname, "db");
@@ -258,11 +259,36 @@ app.post("/api/orders/:id/verify", (req, res) => {
   updateOrderStatus.run(status, new Date().toISOString(), id);
 
   if (action === "approve") {
-    bot.sendMessage(
-      order.customerId,
-      `🎉 Great news! Your payment for *${id}* has been *verified* and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}`,
-      { parse_mode: "Markdown" }
-    );
+    if (GROUP_ID) {
+      bot.addChatMember(GROUP_ID, order.customerId).then(() => {
+        bot.sendMessage(
+          order.customerId,
+          `🎉 Great news! Your payment for *${id}* has been *verified* and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}\n\n👥 You've been added to our group!`,
+          { parse_mode: "Markdown" }
+        );
+      }).catch(() => {
+        // Direct add failed, send invite link instead
+        bot.exportChatInviteLink(GROUP_ID).then(link => {
+          bot.sendMessage(
+            order.customerId,
+            `🎉 Great news! Your payment for *${id}* has been *verified* and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}\n\n👥 Join our group here: ${link}`,
+            { parse_mode: "Markdown" }
+          );
+        }).catch(() => {
+          bot.sendMessage(
+            order.customerId,
+            `🎉 Great news! Your payment for *${id}* has been *verified* and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}`,
+            { parse_mode: "Markdown" }
+          );
+        });
+      });
+    } else {
+      bot.sendMessage(
+        order.customerId,
+        `🎉 Great news! Your payment for *${id}* has been *verified* and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}`,
+        { parse_mode: "Markdown" }
+      );
+    }
   } else {
     bot.sendMessage(
       order.customerId,
