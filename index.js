@@ -260,27 +260,16 @@ app.post("/api/orders/:id/verify", (req, res) => {
 
   if (action === "approve") {
     if (GROUP_ID) {
-      bot.addChatMember(GROUP_ID, order.customerId).then(() => {
+      Promise.all([
+        bot.addChatMember(GROUP_ID, order.customerId).catch(() => null),
+        bot.exportChatInviteLink(GROUP_ID).catch(() => null),
+      ]).then(([, link]) => {
+        const groupLine = link ? `\n\n👥 Join our group: ${link}` : "\n\n👥 You've been added to our group!";
         bot.sendMessage(
           order.customerId,
-          `🎉 Great news! Your payment for *${id}* has been *verified* and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}\n\n👥 You've been added to our group!`,
+          `🎉 Great news! Your payment for *${id}* has been *verified* and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}${groupLine}`,
           { parse_mode: "Markdown" }
         );
-      }).catch(() => {
-        // Direct add failed, send invite link instead
-        bot.exportChatInviteLink(GROUP_ID).then(link => {
-          bot.sendMessage(
-            order.customerId,
-            `🎉 Great news! Your payment for *${id}* has been *verified* and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}\n\n👥 Join our group here: ${link}`,
-            { parse_mode: "Markdown" }
-          );
-        }).catch(() => {
-          bot.sendMessage(
-            order.customerId,
-            `🎉 Great news! Your payment for *${id}* has been *verified* and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}`,
-            { parse_mode: "Markdown" }
-          );
-        });
       });
     } else {
       bot.sendMessage(
