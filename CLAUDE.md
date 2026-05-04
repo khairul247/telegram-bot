@@ -162,6 +162,16 @@ User → bot.sharekhair.net:443 → Traefik → container:3001
 - `ADMIN_USERNAME`
 - `PORT=3001`
 
+**Volumes:**
+- Source: `/opt/db` → Target: `/app/db` (SQLite persistence)
+- Source: `/opt/uploads` → Target: `/app/uploads` (receipt images persistence)
+
+**Deploying changes:**
+After redeploy, if changes don't reflect, Dokploy doesn't auto-swap the container. Fix: **Stop → Start** the app manually in Dokploy.
+
+**Docker cache:**
+The Dockerfile uses `ARG CACHEBUST` + `RUN echo $CACHEBUST` to bust the layer cache. Bump the value in the Dockerfile when a fresh build is needed.
+
 ## Key Notes
 
 - `qr.png` must exist at the repo root for the "Buy Now" flow to work — it is not committed.
