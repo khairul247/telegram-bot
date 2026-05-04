@@ -57,6 +57,7 @@ Customer sends photo via Telegram
 | GET | `/api/orders` | All orders, sorted newest first |
 | GET | `/api/stats` | Counts: total, pending, approved, rejected |
 | POST | `/api/orders/:id/verify` | Approve or reject an order |
+| DELETE | `/api/orders/:id` | Delete an order and its receipt image |
 | GET | `/uploads/*` | Serve receipt image files |
 
 ## Bot Flow
@@ -104,7 +105,8 @@ CREATE TABLE settings (
 
 - Auto-polls `/api/orders` and `/api/stats` every 4 seconds
 - Filter orders by status (all / pending / approved / rejected)
-- Receipt modal — view image, approve/reject with optional message
+- Receipt modal — view image, approve/reject with optional message, delete order
+- Delete button on order row (hover to reveal) — deletes order and receipt image
 - Export filtered orders to Excel (XLSX)
 - Live/Offline connection indicator
 - Light/dark mode toggle (persisted to `localStorage`)
@@ -174,6 +176,7 @@ User → bot.sharekhair.net:443 → Traefik → container:3001
 **Environment variables** (set in Dokploy UI):
 - `BOT_TOKEN`
 - `ADMIN_USERNAME`
+- `GROUP_ID` — Telegram supergroup ID (must start with `-100`, e.g. `-1001234567890`)
 - `PORT=3001`
 
 **Volumes:**
@@ -203,4 +206,7 @@ The Dockerfile uses `ARG CACHEBUST` + `RUN echo $CACHEBUST` to bust the layer ca
 - The Vite dev server proxies `/api` and `/uploads` to `http://localhost:3001` (dev only).
 - API base URL in `App.jsx` is `''` (empty string) so it works on any host via relative paths.
 - Orders persist in SQLite (`db/orders.db`). Receipt images persist at `/opt/uploads` on the Dokploy server (volume mounted). Both survive restarts and redeploys.
-- Only one bot instance can run at a time — running locally while Render is also running causes a 409 conflict.
+- Only one bot instance can run at a time — running locally or on Render while Dokploy is also running causes a 409 conflict. Suspend Render if using Dokploy.
+- `GROUP_ID` must be a **supergroup** ID (starts with `-100`). Basic groups don't support `createChatInviteLink`. Convert to supergroup by enabling Topics in group settings.
+- Bot must be admin in the group with **"Invite Users via Link"** permission for the group invite feature to work.
+- Telegram Bot API cannot add users directly to groups — only invite links work.
