@@ -166,6 +166,17 @@ User → bot.sharekhair.net:443 → Traefik → container:3001
 - Source: `/opt/db` → Target: `/app/db` (SQLite persistence)
 - Source: `/opt/uploads` → Target: `/app/uploads` (receipt images persistence)
 
+**IMPORTANT:** Both host directories must exist on the server before deploying, or the container will fail to start with "bind source path does not exist" error. Run once on the server:
+```bash
+mkdir -p /opt/db /opt/uploads
+```
+
+Images are stored permanently at `/opt/uploads` on the host — they only get deleted if you manually `rm` them or destroy the VPS.
+
+To view images: `https://bot.sharekhair.net/uploads/FILENAME` or `ls /opt/uploads` via SSH.
+
+**Dokploy runs in Docker Swarm mode.** Volumes configured in the Dokploy UI are Swarm bind mounts — they apply on redeploy, not immediately. Use `docker service ps telegram-bot-fc40rf --no-trunc` to diagnose startup failures.
+
 **Deploying changes:**
 After redeploy, if changes don't reflect, Dokploy doesn't auto-swap the container. Fix: **Stop → Start** the app manually in Dokploy.
 
@@ -177,5 +188,5 @@ The Dockerfile uses `ARG CACHEBUST` + `RUN echo $CACHEBUST` to bust the layer ca
 - `qr.png` must exist at the repo root for the "Buy Now" flow to work — it is not committed.
 - The Vite dev server proxies `/api` and `/uploads` to `http://localhost:3001` (dev only).
 - API base URL in `App.jsx` is `''` (empty string) so it works on any host via relative paths.
-- Orders persist in SQLite (`db/orders.db`). Receipt images are still ephemeral on Render/Dokploy unless a volume is mounted at `/app/uploads`.
+- Orders persist in SQLite (`db/orders.db`). Receipt images persist at `/opt/uploads` on the Dokploy server (volume mounted). Both survive restarts and redeploys.
 - Only one bot instance can run at a time — running locally while Render is also running causes a 409 conflict.

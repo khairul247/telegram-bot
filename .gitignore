@@ -3,3 +3,4 @@ dashboard/node_modules/
 dashboard/dist/
 .env
 uploads/
+db/
