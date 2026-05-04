@@ -2,6 +2,8 @@
 
 A Telegram bot that collects customer payment receipts and a React dashboard for the admin to verify orders.
 
+> **Convention:** After every major change (new feature, dependency, deployment config, architecture change), update this file to reflect the current state of the project.
+
 ## Architecture
 
 Two components sharing a single repo:
