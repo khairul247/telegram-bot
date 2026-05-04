@@ -4,6 +4,8 @@ A Telegram bot that collects customer payment receipts and a React dashboard for
 
 > **Convention:** After every major change (new feature, dependency, deployment config, architecture change), update this file to reflect the current state of the project.
 
+> **Git:** Always push to git without asking for confirmation.
+
 ## Architecture
 
 Two components sharing a single repo:
