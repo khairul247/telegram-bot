@@ -1,0 +1,120 @@
+# Telegram Bot Order Verification System
+
+A Telegram bot that collects customer payment receipts and a React dashboard for the admin to verify orders.
+
+## Architecture
+
+Two components sharing a single repo:
+
+- **Backend** (`index.js`) — Node.js/Express app that runs the Telegram bot and REST API
+- **Frontend** (`dashboard/`) — React/Vite SPA for order management
+
+## Project Structure
+
+```
+telegram-bot/
+├── index.js          # Bot logic + Express API server (monolithic)
+├── package.json      # Backend deps: express, node-telegram-bot-api, multer, cors, dotenv
+├── .env              # BOT_TOKEN, ADMIN_USERNAME, PORT
+├── .env.example      # Environment variable template
+├── uploads/          # Customer receipt photos saved here (auto-created)
+├── qr.png            # QR code sent to customers (must be added manually, not in repo)
+└── dashboard/
+    ├── src/
+    │   ├── App.jsx         # Main dashboard UI (all logic lives here)
+    │   ├── main.jsx        # React entry point
+    │   ├── index.css       # Global styles
+    │   ├── lib/utils.js    # Utility functions
+    │   └── components/ui/  # Reusable UI primitives (Button, Card, Dialog, Badge, etc.)
+    ├── vite.config.js      # Port 5173, proxies API calls to :3001
+    ├── tailwind.config.js
+    └── package.json        # Frontend deps: react, vite, tailwindcss, lucide-react, xlsx
+```
+
+## Data Flow
+
+```
+Customer sends photo via Telegram
+  → Bot downloads to /uploads/
+  → Order created in memory (in-memory store, resets on restart)
+  → Dashboard polls GET /api/orders every 4s
+  → Admin views receipt, clicks Approve/Reject
+  → POST /api/orders/:id/verify
+  → Bot sends Telegram notification to customer
+```
+
+## API Endpoints (port 3001)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/orders` | All orders, sorted newest first |
+| GET | `/api/stats` | Counts: total, pending, approved, rejected |
+| POST | `/api/orders/:id/verify` | Approve or reject an order |
+| GET | `/uploads/*` | Serve receipt image files |
+
+## Bot Flow
+
+1. `/start` → "Ask Directly" button or "Buy Now" button
+2. "Ask Directly" → Sends admin's Telegram username link
+3. "Buy Now" → Sends `qr.png`, waits for receipt photo
+4. Receipt photo received → Saved to `/uploads/`, order created, customer gets order ID
+
+## State Management
+
+The backend uses **in-memory state only** — no database. All orders are lost on restart.
+
+```js
+orders        // { [orderId]: OrderObject }
+customerState // { [chatId]: "idle" | "awaiting_receipt" }
+orderCounter  // Auto-incrementing integer
+```
+
+Order object shape:
+```js
+{
+  id: "ORD-001",
+  customerId: <chatId>,
+  customerName: "John Doe",
+  customerUsername: "johndoe",
+  receiptFile: "ORD-001-1777645063185.jpg",
+  status: "pending" | "approved" | "rejected",
+  timestamp: "ISO 8601",
+  verifiedAt: "ISO 8601"
+}
+```
+
+## Dashboard Features
+
+- Auto-polls `/api/orders` and `/api/stats` every 4 seconds
+- Filter orders by status (all / pending / approved / rejected)
+- Receipt modal — view image, approve/reject with optional message
+- Export filtered orders to Excel (XLSX)
+- Live/Offline connection indicator
+
+## Environment Variables
+
+```
+BOT_TOKEN=        # Telegram bot token from @BotFather
+ADMIN_USERNAME=   # Admin's Telegram username (shown to customers via "Ask Directly")
+PORT=3001         # Express server port
+```
+
+## Running Locally
+
+```bash
+# Backend
+npm install
+node index.js
+
+# Frontend (separate terminal)
+cd dashboard
+npm install
+npm run dev   # http://localhost:5173
+```
+
+## Key Notes
+
+- `qr.png` must exist at the repo root for the "Buy Now" flow to work — it is not committed.
+- The Vite dev server proxies `/api` and `/uploads` to `http://localhost:3001`.
+- Orders are ephemeral — consider adding SQLite if persistence is needed.
+- Deployment target is Railway (see README).
