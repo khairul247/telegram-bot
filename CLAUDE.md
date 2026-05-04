@@ -66,26 +66,25 @@ Customer sends photo via Telegram
 
 ## State Management
 
-The backend uses **in-memory state only** — no database. All orders are lost on restart.
+Orders are persisted to **SQLite** via `better-sqlite3`. The DB file lives at `db/orders.db` (relative to repo root). In Dokploy, mount a volume at `/app/db` to survive redeploys.
 
 ```js
-orders        // { [orderId]: OrderObject }
-customerState // { [chatId]: "idle" | "awaiting_receipt" }
-orderCounter  // Auto-incrementing integer
+customerState // { [chatId]: "idle" | "awaiting_receipt" } — still in-memory
+orderCounter  // Restored from DB on startup, auto-incrementing
 ```
 
-Order object shape:
-```js
-{
-  id: "ORD-001",
-  customerId: <chatId>,
-  customerName: "John Doe",
-  customerUsername: "johndoe",
-  receiptFile: "ORD-001-1777645063185.jpg",
-  status: "pending" | "approved" | "rejected",
-  timestamp: "ISO 8601",
-  verifiedAt: "ISO 8601"
-}
+SQLite schema:
+```sql
+CREATE TABLE orders (
+  id TEXT PRIMARY KEY,
+  customerId INTEGER NOT NULL,
+  customerName TEXT,
+  customerUsername TEXT,
+  receiptFile TEXT,
+  status TEXT DEFAULT 'pending',  -- pending | approved | rejected
+  timestamp TEXT,                 -- ISO 8601
+  verifiedAt TEXT                 -- ISO 8601, set on verify
+)
 ```
 
 ## Dashboard Features
@@ -95,6 +94,7 @@ Order object shape:
 - Receipt modal — view image, approve/reject with optional message
 - Export filtered orders to Excel (XLSX)
 - Live/Offline connection indicator
+- Light/dark mode toggle (persisted to `localStorage`)
 
 ## Environment Variables
 
@@ -167,5 +167,5 @@ User → bot.sharekhair.net:443 → Traefik → container:3001
 - `qr.png` must exist at the repo root for the "Buy Now" flow to work — it is not committed.
 - The Vite dev server proxies `/api` and `/uploads` to `http://localhost:3001` (dev only).
 - API base URL in `App.jsx` is `''` (empty string) so it works on any host via relative paths.
-- Orders are ephemeral — lost on restart (no database). Receipt images are also lost on Render redeploy.
+- Orders persist in SQLite (`db/orders.db`). Receipt images are still ephemeral on Render/Dokploy unless a volume is mounted at `/app/uploads`.
 - Only one bot instance can run at a time — running locally while Render is also running causes a 409 conflict.
