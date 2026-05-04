@@ -14,6 +14,7 @@ RUN npm install --prefix dashboard
 
 # Copy source and build dashboard
 ARG CACHEBUST=2
+RUN echo "Cache bust: $CACHEBUST"
 COPY . .
 RUN cd dashboard && npm run build
 
