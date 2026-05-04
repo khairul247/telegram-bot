@@ -137,6 +137,29 @@ Express then serves `dashboard/dist/` as static files with a catch-all for SPA r
 
 > The `render.yaml` is in the repo but Render uses the Build/Start commands set in the UI when the service was created manually — `render.yaml` is only auto-applied for Blueprint deployments.
 
+## Deployment (Dokploy)
+
+Deployed at: `https://bot.sharekhair.net`
+
+Uses Docker + Traefik (managed by Dokploy). The Dockerfile builds and serves the app.
+
+**Domain setup:**
+- DNS: `A` record → `bot` → server IP (at domain registrar)
+- Dokploy → app → Domains tab → Add Domain:
+  - Host: `bot.sharekhair.net`
+  - Port: `3001` (the port Express listens on inside the container)
+  - HTTPS: enabled (Traefik auto-issues SSL via Let's Encrypt)
+
+**Traffic flow:**
+```
+User → bot.sharekhair.net:443 → Traefik → container:3001
+```
+
+**Environment variables** (set in Dokploy UI):
+- `BOT_TOKEN`
+- `ADMIN_USERNAME`
+- `PORT=3001`
+
 ## Key Notes
 
 - `qr.png` must exist at the repo root for the "Buy Now" flow to work — it is not committed.
