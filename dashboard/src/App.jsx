@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   CheckCircle2, XCircle, Clock, RefreshCw, Package,
-  Wifi, WifiOff, Bot, X, Download
+  Wifi, WifiOff, Bot, X, Download, Sun, Moon
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { cn } from '@/lib/utils'
@@ -212,6 +212,14 @@ export default function App() {
   const [filter, setFilter] = useState('all')
   const [connected, setConnected] = useState(true)
   const [lastRefresh, setLastRefresh] = useState(null)
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark')
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('light', theme === 'light')
+    localStorage.setItem('theme', theme)
+  }, [theme])
+
+  const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
 
   const fetchData = useCallback(async () => {
     try {
@@ -275,6 +283,9 @@ export default function App() {
             </Badge>
             <Button variant="outline" size="sm" onClick={fetchData}>
               <RefreshCw size={12} /> Refresh
+            </Button>
+            <Button variant="outline" size="icon" onClick={toggleTheme}>
+              {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
             </Button>
           </div>
         </div>
