@@ -262,8 +262,9 @@ app.post("/api/orders/:id/verify", (req, res) => {
     if (GROUP_ID) {
       Promise.all([
         bot.addChatMember(GROUP_ID, order.customerId).catch(() => null),
-        bot.exportChatInviteLink(GROUP_ID).catch(() => null),
-      ]).then(([, link]) => {
+        bot.createChatInviteLink(GROUP_ID, { member_limit: 1 }).catch(() => null),
+      ]).then(([, invite]) => {
+        const link = invite?.invite_link;
         const groupLine = link ? `\n\n👥 Join our group: ${link}` : "\n\n👥 You've been added to our group!";
         bot.sendMessage(
           order.customerId,
