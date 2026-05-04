@@ -259,14 +259,17 @@ app.post("/api/orders/:id/verify", (req, res) => {
   updateOrderStatus.run(status, new Date().toISOString(), id);
 
   if (action === "approve") {
+    console.log(`[APPROVE] ${id} | GROUP_ID=${GROUP_ID} | customerId=${order.customerId}`);
     if (GROUP_ID) {
       bot.createChatInviteLink(GROUP_ID, { member_limit: 1 }).then(invite => {
+        console.log(`[INVITE LINK] ${invite.invite_link}`);
         bot.sendMessage(
           order.customerId,
           `🎉 Great news! Your payment for *${id}* has been *verified* and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}\n\n👥 Join our group here (one-time link): ${invite.invite_link}`,
           { parse_mode: "Markdown" }
         );
-      }).catch(() => {
+      }).catch(err => {
+        console.error(`[INVITE LINK ERROR]`, err.message);
         bot.sendMessage(
           order.customerId,
           `🎉 Great news! Your payment for *${id}* has been *verified* and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}`,
