@@ -274,6 +274,20 @@ app.post("/api/orders/:id/verify", (req, res) => {
   res.json({ success: true, order: getOrder.get(id) });
 });
 
+app.delete("/api/orders/:id", (req, res) => {
+  const { id } = req.params;
+  const order = getOrder.get(id);
+  if (!order) return res.status(404).json({ error: "Order not found" });
+
+  if (order.receiptFile) {
+    const filePath = path.join(UPLOADS_DIR, order.receiptFile);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+  }
+
+  db.prepare("DELETE FROM orders WHERE id = ?").run(id);
+  res.json({ success: true });
+});
+
 app.get("/api/stats", (req, res) => {
   const stats = db.prepare(`
     SELECT

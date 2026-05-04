@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   CheckCircle2, XCircle, Clock, RefreshCw, Package,
-  Wifi, WifiOff, Bot, X, Download, Sun, Moon
+  Wifi, WifiOff, Bot, X, Download, Sun, Moon, Trash2
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { cn } from '@/lib/utils'
@@ -66,13 +66,22 @@ function StatCard({ icon: Icon, label, value, colorClass }) {
   )
 }
 
-function ReceiptModal({ order, onClose, onVerify }) {
+function ReceiptModal({ order, onClose, onVerify, onDelete }) {
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
 
   const handle = async (action) => {
     setLoading(true)
     await onVerify(order.id, action, message)
+    setLoading(false)
+    onClose()
+  }
+
+  const handleDelete = async () => {
+    if (!confirmDelete) { setConfirmDelete(true); return }
+    setLoading(true)
+    await onDelete(order.id)
     setLoading(false)
     onClose()
   }
@@ -141,17 +150,33 @@ function ReceiptModal({ order, onClose, onVerify }) {
               </div>
             </>
           ) : (
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-sm text-muted-foreground mb-4">
               This order has already been {order.status}.
             </p>
           )}
+
+          <div className="mt-4 pt-4 border-t border-border">
+            <Button
+              className={cn(
+                'w-full border',
+                confirmDelete
+                  ? 'bg-red-500/30 hover:bg-red-500/40 border-red-500/50 text-red-400'
+                  : 'bg-transparent hover:bg-red-500/10 border-border text-muted-foreground hover:text-red-400 hover:border-red-500/30'
+              )}
+              disabled={loading}
+              onClick={handleDelete}
+            >
+              <Trash2 size={14} />
+              {confirmDelete ? 'Confirm Delete' : 'Delete Order'}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
   )
 }
 
-function OrderRow({ order, onSelect }) {
+function OrderRow({ order, onSelect, onDelete }) {
   return (
     <Card
       onClick={() => onSelect(order)}
@@ -179,9 +204,19 @@ function OrderRow({ order, onSelect }) {
           </p>
         </div>
 
-        <div className="text-right shrink-0">
-          <div className="text-xs font-mono text-muted-foreground">{timeAgo(order.timestamp)}</div>
-          <div className="text-xs mt-1 text-primary opacity-0 group-hover:opacity-100 transition-opacity">View →</div>
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="text-right">
+            <div className="text-xs font-mono text-muted-foreground">{timeAgo(order.timestamp)}</div>
+            <div className="text-xs mt-1 text-primary opacity-0 group-hover:opacity-100 transition-opacity">View →</div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-red-400 hover:bg-red-500/10"
+            onClick={e => { e.stopPropagation(); onDelete(order.id) }}
+          >
+            <Trash2 size={14} />
+          </Button>
         </div>
       </CardContent>
     </Card>
@@ -248,6 +283,11 @@ export default function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action, message })
     })
+    await fetchData()
+  }
+
+  const handleDelete = async (orderId) => {
+    await fetch(`${API}/api/orders/${orderId}`, { method: 'DELETE' })
     await fetchData()
   }
 
@@ -353,7 +393,7 @@ export default function App() {
         ) : (
           <div className="flex flex-col gap-3">
             {filtered.map(order => (
-              <OrderRow key={order.id} order={order} onSelect={setSelected} />
+              <OrderRow key={order.id} order={order} onSelect={setSelected} onDelete={handleDelete} />
             ))}
           </div>
         )}
@@ -364,6 +404,7 @@ export default function App() {
           order={selected}
           onClose={() => setSelected(null)}
           onVerify={handleVerify}
+          onDelete={handleDelete}
         />
       )}
     </div>
