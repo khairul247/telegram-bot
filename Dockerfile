@@ -13,7 +13,7 @@ COPY dashboard/package*.json ./dashboard/
 RUN npm install --prefix dashboard
 
 # Copy source and build dashboard
-ARG CACHEBUST=1
+ARG CACHEBUST=2
 COPY . .
 RUN cd dashboard && npm run build
 
