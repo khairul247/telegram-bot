@@ -4,6 +4,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const cors = require("cors");
+const Database = require("better-sqlite3");
 require('dotenv').config()
 
 // ─── CONFIG ────────────────────────────────────────────────────────────────
@@ -11,13 +12,37 @@ const BOT_TOKEN = process.env.BOT_TOKEN || "YOUR_BOT_TOKEN_HERE";
 const ADMIN_TELEGRAM_USERNAME = process.env.ADMIN_USERNAME || "yourusername"; // without @
 const PORT = process.env.PORT || 3001;
 const UPLOADS_DIR = path.join(__dirname, "uploads");
+const DB_DIR = path.join(__dirname, "db");
 
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+if (!fs.existsSync(DB_DIR)) fs.mkdirSync(DB_DIR, { recursive: true });
 
-// ─── STATE ─────────────────────────────────────────────────────────────────
-// orders: { [orderId]: { id, customerId, customerName, customerUsername, receiptPath, status, timestamp } }
-const orders = {};
-let orderCounter = 1;
+// ─── DATABASE ──────────────────────────────────────────────────────────────
+const db = new Database(path.join(DB_DIR, "orders.db"));
+db.exec(`
+  CREATE TABLE IF NOT EXISTS orders (
+    id TEXT PRIMARY KEY,
+    customerId INTEGER NOT NULL,
+    customerName TEXT,
+    customerUsername TEXT,
+    receiptFile TEXT,
+    status TEXT DEFAULT 'pending',
+    timestamp TEXT,
+    verifiedAt TEXT
+  )
+`);
+
+const insertOrder = db.prepare(`
+  INSERT INTO orders (id, customerId, customerName, customerUsername, receiptFile, status, timestamp)
+  VALUES (@id, @customerId, @customerName, @customerUsername, @receiptFile, @status, @timestamp)
+`);
+const getOrder = db.prepare("SELECT * FROM orders WHERE id = ?");
+const getAllOrders = db.prepare("SELECT * FROM orders ORDER BY timestamp DESC");
+const updateOrderStatus = db.prepare("UPDATE orders SET status = ?, verifiedAt = ? WHERE id = ?");
+
+// Restore counter from DB
+const lastOrder = db.prepare("SELECT id FROM orders ORDER BY rowid DESC LIMIT 1").get();
+let orderCounter = lastOrder ? parseInt(lastOrder.id.split("-")[1]) + 1 : 1;
 
 // customerState: { [chatId]: 'idle' | 'awaiting_receipt' }
 const customerState = {};
@@ -106,7 +131,7 @@ bot.on("photo", async (msg) => {
     });
 
     // Save order
-    orders[orderId] = {
+    insertOrder.run({
       id: orderId,
       customerId: chatId,
       customerName: `${msg.from.first_name || ""} ${msg.from.last_name || ""}`.trim(),
@@ -114,7 +139,7 @@ bot.on("photo", async (msg) => {
       receiptFile: fileName,
       status: "pending",
       timestamp: new Date().toISOString(),
-    };
+    });
 
     customerState[chatId] = "idle";
 
@@ -124,7 +149,7 @@ bot.on("photo", async (msg) => {
       { parse_mode: "Markdown" }
     );
 
-    console.log(`[NEW ORDER] ${orderId} from ${orders[orderId].customerName}`);
+    console.log(`[NEW ORDER] ${orderId} from ${getOrder.get(orderId).customerName}`);
   } catch (err) {
     console.error("Error saving receipt:", err);
     bot.sendMessage(chatId, "❌ Something went wrong. Please try again.");
@@ -139,7 +164,7 @@ app.use("/uploads", express.static(UPLOADS_DIR));
 
 // GET all orders
 app.get("/api/orders", (req, res) => {
-  res.json(Object.values(orders).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)));
+  res.json(getAllOrders.all());
 });
 
 // POST verify order (approve/reject)
@@ -147,12 +172,14 @@ app.post("/api/orders/:id/verify", (req, res) => {
   const { id } = req.params;
   const { action, message } = req.body; // action: 'approve' | 'reject'
 
-  if (!orders[id]) return res.status(404).json({ error: "Order not found" });
+  const order = getOrder.get(id);
+  if (!order) return res.status(404).json({ error: "Order not found" });
 
-  orders[id].status = action === "approve" ? "approved" : "rejected";
-  orders[id].verifiedAt = new Date().toISOString();
+  const status = action === "approve" ? "approved" : "rejected";
+  const verifiedAt = new Date().toISOString();
+  updateOrderStatus.run(status, verifiedAt, id);
 
-  const customerId = orders[id].customerId;
+  const customerId = order.customerId;
 
   if (action === "approve") {
     bot.sendMessage(
@@ -168,18 +195,20 @@ app.post("/api/orders/:id/verify", (req, res) => {
     );
   }
 
-  res.json({ success: true, order: orders[id] });
+  res.json({ success: true, order: getOrder.get(id) });
 });
 
 // GET stats
 app.get("/api/stats", (req, res) => {
-  const all = Object.values(orders);
-  res.json({
-    total: all.length,
-    pending: all.filter((o) => o.status === "pending").length,
-    approved: all.filter((o) => o.status === "approved").length,
-    rejected: all.filter((o) => o.status === "rejected").length,
-  });
+  const stats = db.prepare(`
+    SELECT
+      COUNT(*) as total,
+      SUM(status = 'pending') as pending,
+      SUM(status = 'approved') as approved,
+      SUM(status = 'rejected') as rejected
+    FROM orders
+  `).get();
+  res.json(stats);
 });
 
 // Serve built dashboard
