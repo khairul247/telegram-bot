@@ -61,18 +61,25 @@ Customer sends photo via Telegram
 
 ## Bot Flow
 
-1. `/start` → "Ask Directly" button or "Buy Now" button
+1. `/start` → "Ask Directly" / "Buy Now" / "Check Order Status" buttons
 2. "Ask Directly" → Sends admin's Telegram username link
-3. "Buy Now" → Sends `qr.png`, waits for receipt photo
-4. Receipt photo received → Saved to `/uploads/`, order created, customer gets order ID
+3. "Buy Now" → Sends `qr.png`, waits for receipt photo or image document
+4. Receipt received → Saved to `/uploads/`, order created, customer gets order ID, admin notified on Telegram
+5. "Check Order Status" → Customer types order ID (e.g. ORD-001), bot replies with current status
+6. `/cancel` → Exits any state back to idle
+7. Text while awaiting receipt → Bot reminds customer to send a photo
+8. Unknown text while idle → Bot shows main menu
+
+**Admin notification:** When a new order arrives, the bot sends a Telegram message to the admin. Admin chat ID is auto-detected when the admin runs `/start` on the bot and persisted to SQLite (`settings` table). No env var needed.
 
 ## State Management
 
 Orders are persisted to **SQLite** via `better-sqlite3`. The DB file lives at `db/orders.db` (relative to repo root). In Dokploy, mount a volume at `/app/db` to survive redeploys.
 
 ```js
-customerState // { [chatId]: "idle" | "awaiting_receipt" } — still in-memory
+customerState // { [chatId]: "idle" | "awaiting_receipt" | "awaiting_order_id" } — in-memory
 orderCounter  // Restored from DB on startup, auto-incrementing
+adminChatId   // Restored from settings table on startup
 ```
 
 SQLite schema:
@@ -86,7 +93,11 @@ CREATE TABLE orders (
   status TEXT DEFAULT 'pending',  -- pending | approved | rejected
   timestamp TEXT,                 -- ISO 8601
   verifiedAt TEXT                 -- ISO 8601, set on verify
-)
+);
+CREATE TABLE settings (
+  key TEXT PRIMARY KEY,
+  value TEXT                      -- stores adminChatId
+);
 ```
 
 ## Dashboard Features
