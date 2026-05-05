@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import {
   CheckCircle2, XCircle, Clock, RefreshCw, Package,
-  Wifi, WifiOff, Bot, X, Download, Sun, Moon, Trash2
+  Wifi, WifiOff, Bot, X, Download, Sun, Moon, Trash2, RotateCcw
 } from 'lucide-react'
 import * as XLSX from 'xlsx'
 import { cn } from '@/lib/utils'
@@ -291,6 +291,13 @@ export default function App() {
     await fetchData()
   }
 
+  const handleFactoryReset = async () => {
+    if (!window.confirm('⚠️ FACTORY RESET\n\nThis will permanently delete ALL orders and receipt images. This cannot be undone.\n\nAre you sure?')) return
+    if (!window.confirm('Are you absolutely sure? All data will be lost.')) return
+    await fetch(`${API}/api/orders`, { method: 'DELETE' })
+    await fetchData()
+  }
+
   const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
 
   return (
@@ -323,6 +330,15 @@ export default function App() {
             </Badge>
             <Button variant="outline" size="sm" onClick={fetchData}>
               <RefreshCw size={12} /> Refresh
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleFactoryReset}
+              className="text-muted-foreground hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10"
+              title="Factory Reset"
+            >
+              <RotateCcw size={14} />
             </Button>
             <Button variant="outline" size="icon" onClick={toggleTheme}>
               {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}

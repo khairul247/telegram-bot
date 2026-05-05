@@ -294,6 +294,21 @@ app.post("/api/orders/:id/verify", (req, res) => {
   res.json({ success: true, order: getOrder.get(id) });
 });
 
+app.delete("/api/orders", (req, res) => {
+  const orders = getAllOrders.all();
+  for (const order of orders) {
+    if (order.receiptFile) {
+      const filePath = path.join(UPLOADS_DIR, order.receiptFile);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
+  }
+  db.prepare("DELETE FROM orders").run();
+  db.prepare("DELETE FROM sqlite_sequence WHERE name = 'orders'").run();
+  orderCounter = 1;
+  console.log("[FACTORY RESET] All orders and receipt images deleted");
+  res.json({ success: true });
+});
+
 app.delete("/api/orders/:id", (req, res) => {
   const { id } = req.params;
   const order = getOrder.get(id);
