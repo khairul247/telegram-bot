@@ -204,14 +204,17 @@ bot.on("document", async (msg) => {
 
 // Handle text messages
 bot.on("message", (msg) => {
-  if (!msg.text || msg.text.startsWith("/")) return;
   const chatId = msg.chat.id;
   const state = customerState[chatId] || "idle";
 
-  if (state === "awaiting_receipt") {
-    bot.sendMessage(chatId, "📸 Sila hantar *bukti* pembayaran awak ya.\n\nTaip /cancel untuk kembali ke halaman utama.", { parse_mode: "Markdown" });
+  if (state === "awaiting_receipt" && !msg.photo && !msg.document) {
+    if (!msg.text || !msg.text.startsWith("/")) {
+      bot.sendMessage(chatId, "📸 Sila hantar *bukti* pembayaran awak ya.\n\nTaip /cancel kalau nak batalkan.", { parse_mode: "Markdown" });
+    }
     return;
   }
+
+  if (!msg.text || msg.text.startsWith("/")) return;
 
   if (state === "awaiting_order_id") {
     const orderId = msg.text.trim().toUpperCase();
