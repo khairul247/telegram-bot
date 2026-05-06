@@ -283,7 +283,7 @@ app.post("/api/orders/:id/verify", (req, res) => {
   } else {
     bot.sendMessage(
       order.customerId,
-      `Maaf, saya tak dapat sahkan pembayaran awak untuk <b>${id}</b>.\n\n${message || "Boleh pm saya ya."}`,
+      `Maaf, saya tak dapat sahkan pembayaran awak untuk <b>${id}</b>.\n\n${message || `Boleh terus pm saya ya @${ADMIN_TELEGRAM_USERNAME}`}`,
       { parse_mode: "HTML" }
     );
   }
