@@ -63,9 +63,9 @@ const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 const mainMenu = {
   reply_markup: {
     inline_keyboard: [
-      [{ text: "💬 PM tepi", callback_data: "ask_directly" }],
-      [{ text: "🛒 Nak bayar terus", callback_data: "buy_now" }],
-      [{ text: "📦 Check Order Status", callback_data: "check_status" }],
+      [{ text: "💬 Nak PM tepi?", callback_data: "ask_directly" }],
+      [{ text: "🛒 Nak bayar terus?", callback_data: "buy_now" }],
+      [{ text: "📦 Nak check status order?", callback_data: "check_status" }],
     ],
   },
 };
@@ -102,7 +102,7 @@ bot.on("callback_query", async (query) => {
     customerState[chatId] = "idle";
     bot.sendMessage(
       chatId,
-      `📱 Boleh je! Boleh contact saya terus kat\n\n👉 @${ADMIN_TELEGRAM_USERNAME}\n\nKalau ada apa-apa nak tanya, silakan!`
+      `📱 Boleh contact saya terus kat\n\n👉 @${ADMIN_TELEGRAM_USERNAME}\n\nKalau ada apa-apa nak tanya, silakan!`
     );
   }
 
@@ -111,7 +111,7 @@ bot.on("callback_query", async (query) => {
     const qrPath = path.join(__dirname, "qr.png");
     if (fs.existsSync(qrPath)) {
       await bot.sendPhoto(chatId, qrPath, {
-        caption: "💳 Boleh buat pembayaran di QR code ni ya.\n\nBila dah hantar, saya akan verify ✅\n\nTaip /cancel untuk patah balik.",
+        caption: "💳 Boleh buat pembayaran guna QR code ni ya.\n\nBila dah hantar, nanti saya akan verify ✅\n\nTaip /cancel untuk patah balik.",
       });
     } else {
       await bot.sendMessage(
@@ -235,7 +235,7 @@ bot.on("message", (msg) => {
     return;
   }
 
-  bot.sendMessage(chatId, "👋 Use the menu below to get started!", mainMenu);
+  bot.sendMessage(chatId, "Hi, apa yang saya boleh tolong?", mainMenu);
 });
 
 // ─── EXPRESS API ────────────────────────────────────────────────────────────
@@ -303,7 +303,6 @@ app.delete("/api/orders", (req, res) => {
     }
   }
   db.prepare("DELETE FROM orders").run();
-  db.prepare("DELETE FROM sqlite_sequence WHERE name = 'orders'").run();
   orderCounter = 1;
   console.log("[FACTORY RESET] All orders and receipt images deleted");
   res.json({ success: true });
