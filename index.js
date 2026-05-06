@@ -63,8 +63,8 @@ const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 const mainMenu = {
   reply_markup: {
     inline_keyboard: [
-      [{ text: "💬 Ask Me Directly", callback_data: "ask_directly" }],
-      [{ text: "🛒 Buy Now", callback_data: "buy_now" }],
+      [{ text: "💬 PM tepi", callback_data: "ask_directly" }],
+      [{ text: "🛒 Nak bayar terus", callback_data: "buy_now" }],
       [{ text: "📦 Check Order Status", callback_data: "check_status" }],
     ],
   },
@@ -89,7 +89,7 @@ bot.onText(/\/start/, (msg) => {
 
 bot.onText(/\/cancel/, (msg) => {
   customerState[msg.chat.id] = "idle";
-  bot.sendMessage(msg.chat.id, "❌ Cancelled. How can I help you?", mainMenu);
+  bot.sendMessage(msg.chat.id, "❌ Cancelled. Apa saya boleh tolong ya?", mainMenu);
 });
 
 bot.on("callback_query", async (query) => {
@@ -102,7 +102,7 @@ bot.on("callback_query", async (query) => {
     customerState[chatId] = "idle";
     bot.sendMessage(
       chatId,
-      `📱 Sure! You can reach me directly on Telegram:\n\n👉 @${ADMIN_TELEGRAM_USERNAME}\n\nFeel free to message me anytime!`
+      `📱 Boleh je! Boleh contact saya terus kat\n\n👉 @${ADMIN_TELEGRAM_USERNAME}\n\nKalau ada apa-apa nak tanya, silakan!`
     );
   }
 
@@ -111,19 +111,19 @@ bot.on("callback_query", async (query) => {
     const qrPath = path.join(__dirname, "qr.png");
     if (fs.existsSync(qrPath)) {
       await bot.sendPhoto(chatId, qrPath, {
-        caption: "💳 Please scan the QR code to make your payment.\n\nOnce done, send me your receipt photo here and I'll verify it shortly! ✅\n\nType /cancel to go back.",
+        caption: "💳 Boleh buat pembayaran di QR code ni ya.\n\nBila dah hantar, saya akan verify ✅\n\nTaip /cancel untuk patah balik.",
       });
     } else {
       await bot.sendMessage(
         chatId,
-        "💳 Please make your payment using our payment details.\n\nOnce done, send me your receipt photo here and I'll verify it shortly! ✅\n\nType /cancel to go back."
+        "💳 Boleh buat pembayaran di QR code ni ya.\n\nBila dah hantar, saya akan verify ✅\n\nTaip /cancel untuk patah balik."
       );
     }
   }
 
   if (data === "check_status") {
     customerState[chatId] = "awaiting_order_id";
-    bot.sendMessage(chatId, "📦 Please enter your order ID (e.g. ORD-001):\n\nType /cancel to go back.");
+    bot.sendMessage(chatId, "📦 Masukkan ord no (e.g. ORD-001):\n\nTaip /cancel untuk patah balik.");
   }
 });
 
@@ -159,7 +159,7 @@ async function handleReceipt(msg, fileId) {
 
     bot.sendMessage(
       chatId,
-      `✅ Receipt received! Your order ID is *${orderId}*.\n\nWe'll verify your payment and get back to you shortly. Thank you! 🙏`,
+      `✅ Ok dah dapat resit! Ini ID awak ya: *${orderId}*.\n\nLepas saya verify, nanti kita akan bagi link untuk join group ya 🙏`,
       { parse_mode: "Markdown" }
     );
 
@@ -185,7 +185,7 @@ async function handleReceipt(msg, fileId) {
 bot.on("photo", async (msg) => {
   const chatId = msg.chat.id;
   if (customerState[chatId] !== "awaiting_receipt") {
-    bot.sendMessage(chatId, "Please use /start to begin.", mainMenu);
+    bot.sendMessage(chatId, "Sila guna /start untuk mula balik.", mainMenu);
     return;
   }
   await handleReceipt(msg, msg.photo[msg.photo.length - 1].file_id);
@@ -195,11 +195,11 @@ bot.on("photo", async (msg) => {
 bot.on("document", async (msg) => {
   const chatId = msg.chat.id;
   if (customerState[chatId] !== "awaiting_receipt") {
-    bot.sendMessage(chatId, "Please use /start to begin.", mainMenu);
+    bot.sendMessage(chatId, "Sila guna /start untuk mula balik.", mainMenu);
     return;
   }
   if (!msg.document.mime_type || !msg.document.mime_type.startsWith("image/")) {
-    bot.sendMessage(chatId, "❌ Please send an image file of your receipt.");
+    bot.sendMessage(chatId, "❌ Tolong hantar bukti pembayaran dalam bentuk gambar ya.");
     return;
   }
   await handleReceipt(msg, msg.document.file_id);
@@ -212,7 +212,7 @@ bot.on("message", (msg) => {
   const state = customerState[chatId] || "idle";
 
   if (state === "awaiting_receipt") {
-    bot.sendMessage(chatId, "📸 Please send a *photo* of your payment receipt.\n\nType /cancel to go back.", { parse_mode: "Markdown" });
+    bot.sendMessage(chatId, "📸 Sila hantar *bukti* pembayaran awak ya.\n\nTaip /cancel untuk patah balik.", { parse_mode: "Markdown" });
     return;
   }
 
