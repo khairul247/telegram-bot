@@ -194,12 +194,9 @@ bot.on("photo", async (msg) => {
 // Handle photo sent as file/document
 bot.on("document", async (msg) => {
   const chatId = msg.chat.id;
-  if (customerState[chatId] !== "awaiting_receipt") {
-    bot.sendMessage(chatId, "Sila guna /start untuk mula balik.", mainMenu);
-    return;
-  }
+  if (customerState[chatId] !== "awaiting_receipt") return;
   if (!msg.document.mime_type || !msg.document.mime_type.startsWith("image/")) {
-    bot.sendMessage(chatId, "❌ Tolong hantar bukti pembayaran dalam bentuk gambar ya.");
+    bot.sendMessage(chatId, "❌ Tolong hantar bukti pembayaran dalam bentuk *gambar* ya.\n\nTaip /cancel kalau nak batalkan.", { parse_mode: "Markdown" });
     return;
   }
   await handleReceipt(msg, msg.document.file_id);
@@ -212,7 +209,7 @@ bot.on("message", (msg) => {
   const state = customerState[chatId] || "idle";
 
   if (state === "awaiting_receipt") {
-    bot.sendMessage(chatId, "📸 Sila hantar *bukti* pembayaran awak ya.\n\nTaip /cancel untuk patah balik.", { parse_mode: "Markdown" });
+    bot.sendMessage(chatId, "📸 Sila hantar *bukti* pembayaran awak ya.\n\nTaip /cancel untuk kembali ke halaman utama.", { parse_mode: "Markdown" });
     return;
   }
 
@@ -265,28 +262,28 @@ app.post("/api/orders/:id/verify", (req, res) => {
         console.log(`[INVITE LINK] ${invite.invite_link}`);
         bot.sendMessage(
           order.customerId,
-          `🎉 Great news! Your payment for <b>${id}</b> has been <b>verified</b> and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}\n\n👥 Join our group here (one-time link): ${invite.invite_link}`,
+          `🎉 Saya dah sahkan pembayaran awak ya untuk <b>${id}</b>. \n\n${message || "Terima kasih. 😊"}\n\n👥 Jemput join group (one-time link): ${invite.invite_link}`,
           { parse_mode: "HTML" }
         );
       }).catch(err => {
         console.error(`[INVITE LINK ERROR] ${err.message}`);
         bot.sendMessage(
           order.customerId,
-          `🎉 Great news! Your payment for <b>${id}</b> has been <b>verified</b> and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}`,
+          `🎉 Saya dah sahkan pembayaran awak ya untuk <b>${id}</b>. \n\n${message || "Terima kasih. 😊"}`,
           { parse_mode: "HTML" }
         );
       });
     } else {
       bot.sendMessage(
         order.customerId,
-        `🎉 Great news! Your payment for <b>${id}</b> has been <b>verified</b> and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}`,
+        `🎉 Saya dah sahkan pembayaran awak ya untuk <b>${id}</b>. \n\n${message || "Terima kasih. 😊"}`,
         { parse_mode: "HTML" }
       );
     }
   } else {
     bot.sendMessage(
       order.customerId,
-      `❌ Unfortunately, your payment for <b>${id}</b> could not be verified.\n\n${message || "Please contact us directly for assistance."}`,
+      `Maaf, saya tak dapat sahkan pembayaran awak untuk <b>${id}</b>.\n\n${message || "Boleh pm saya ya."}`,
       { parse_mode: "HTML" }
     );
   }
