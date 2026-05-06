@@ -73,7 +73,7 @@ const mainMenu = {
 const statusEmoji = { pending: "⏳", approved: "✅", rejected: "❌" };
 
 bot.onText(/\/start/, (msg) => {
-  const name = msg.from.first_name || "there";
+  const name = msg.from.first_name || "sana";
   const username = msg.from.username;
 
   // Auto-detect and persist admin chat ID
@@ -169,7 +169,7 @@ async function handleReceipt(msg, fileId) {
       const handle = order.customerUsername ? `@${order.customerUsername}` : "no username";
       bot.sendMessage(
         adminChatId,
-        `🔔 *New Order!*\n\nOrder ID: *${orderId}*\nCustomer: ${name} (${handle})\n\nCheck the dashboard to verify.`,
+        `🔔 *Pesanan Baru!*\n\nID Pesanan: *${orderId}*\nPelanggan: ${name} (${handle})\n\nSemak dashboard untuk verify.`,
         { parse_mode: "Markdown" }
       );
     }
@@ -177,7 +177,7 @@ async function handleReceipt(msg, fileId) {
     console.log(`[NEW ORDER] ${orderId} from ${getOrder.get(orderId).customerName}`);
   } catch (err) {
     console.error("Error saving receipt:", err);
-    bot.sendMessage(chatId, "❌ Something went wrong. Please try again.");
+    bot.sendMessage(chatId, "❌ Ada masalah teknikal. Sila cuba lagi ya.");
   }
 }
 
@@ -219,14 +219,14 @@ bot.on("message", (msg) => {
     customerState[chatId] = "idle";
 
     if (!order) {
-      bot.sendMessage(chatId, `❌ Order *${orderId}* not found. Please check your order ID.`, { parse_mode: "Markdown" });
+      bot.sendMessage(chatId, `❌ Order *${orderId}* tidak dijumpai. Sila semak semula ID order awak ya.`, { parse_mode: "Markdown" });
       return;
     }
 
     const emoji = statusEmoji[order.status] || "❓";
     bot.sendMessage(
       chatId,
-      `📦 Order *${order.id}*\nStatus: ${emoji} *${order.status.toUpperCase()}*\nSubmitted: ${new Date(order.timestamp).toLocaleString()}`,
+      `📦 Order *${order.id}*\nStatus: ${emoji} *${order.status.toUpperCase()}*\nDihantar: ${new Date(order.timestamp).toLocaleString("ms-MY")}`,
       { parse_mode: "Markdown", reply_markup: mainMenu.reply_markup }
     );
     return;
