@@ -84,7 +84,7 @@ bot.onText(/\/start/, (msg) => {
   }
 
   customerState[msg.chat.id] = "idle";
-  bot.sendMessage(msg.chat.id, `👋 Hey ${name}! Welcome!\n\nHow can I help you today?`, mainMenu);
+  bot.sendMessage(msg.chat.id, `👋 Hi ${name}!\n\nApa yang saya boleh tolong ya?`, mainMenu);
 });
 
 bot.onText(/\/cancel/, (msg) => {
@@ -102,7 +102,7 @@ bot.on("callback_query", async (query) => {
     customerState[chatId] = "idle";
     bot.sendMessage(
       chatId,
-      `📱 Boleh contact saya terus kat\n\n👉 @${ADMIN_TELEGRAM_USERNAME}\n\nKalau ada apa-apa nak tanya, silakan!`
+      `📱 Boleh contact saya terus di\n\n👉 @${ADMIN_TELEGRAM_USERNAME}`
     );
   }
 
@@ -111,12 +111,12 @@ bot.on("callback_query", async (query) => {
     const qrPath = path.join(__dirname, "qr.png");
     if (fs.existsSync(qrPath)) {
       await bot.sendPhoto(chatId, qrPath, {
-        caption: "💳 Boleh buat pembayaran guna QR code ni ya.\n\nBila dah hantar, nanti saya akan verify ✅\n\nTaip /cancel untuk patah balik.",
+        caption: "💳 Boleh buat pembayaran guna QR code ni ya.\n\nBila dah hantar, nanti saya akan verify ✅\n\nTaip /cancel kalau nak batalkan pembayaran",
       });
     } else {
       await bot.sendMessage(
         chatId,
-        "💳 Boleh buat pembayaran di QR code ni ya.\n\nBila dah hantar, saya akan verify ✅\n\nTaip /cancel untuk patah balik."
+        "💳 Boleh buat pembayaran di QR code ni ya.\n\nBila dah hantar, nanti saya akan verify ✅\n\nTaip /cancel kalau nak batalkan pembayaran."
       );
     }
   }
@@ -159,7 +159,7 @@ async function handleReceipt(msg, fileId) {
 
     bot.sendMessage(
       chatId,
-      `✅ Ok dah dapat resit! Ini ID awak ya: *${orderId}*.\n\nLepas saya verify, nanti kita akan bagi link untuk join group ya 🙏`,
+      `✅ Ok dah dapat resit! Ini ID awak ya: *${orderId}*.\n\nLepas saya verify, nanti saya akan bagi link untuk join group ya 🙏`,
       { parse_mode: "Markdown" }
     );
 
@@ -265,29 +265,29 @@ app.post("/api/orders/:id/verify", (req, res) => {
         console.log(`[INVITE LINK] ${invite.invite_link}`);
         bot.sendMessage(
           order.customerId,
-          `🎉 Great news! Your payment for *${id}* has been *verified* and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}\n\n👥 Join our group here (one-time link): ${invite.invite_link}`,
-          { parse_mode: "Markdown" }
+          `🎉 Great news! Your payment for <b>${id}</b> has been <b>verified</b> and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}\n\n👥 Join our group here (one-time link): ${invite.invite_link}`,
+          { parse_mode: "HTML" }
         );
       }).catch(err => {
         console.error(`[INVITE LINK ERROR] ${err.message}`);
         bot.sendMessage(
           order.customerId,
-          `🎉 Great news! Your payment for *${id}* has been *verified* and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}`,
-          { parse_mode: "Markdown" }
+          `🎉 Great news! Your payment for <b>${id}</b> has been <b>verified</b> and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}`,
+          { parse_mode: "HTML" }
         );
       });
     } else {
       bot.sendMessage(
         order.customerId,
-        `🎉 Great news! Your payment for *${id}* has been *verified* and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}`,
-        { parse_mode: "Markdown" }
+        `🎉 Great news! Your payment for <b>${id}</b> has been <b>verified</b> and approved!\n\n${message || "Thank you for your purchase! We'll be in touch shortly. 😊"}`,
+        { parse_mode: "HTML" }
       );
     }
   } else {
     bot.sendMessage(
       order.customerId,
-      `❌ Unfortunately, your payment for *${id}* could not be verified.\n\n${message || "Please contact us directly for assistance."}`,
-      { parse_mode: "Markdown" }
+      `❌ Unfortunately, your payment for <b>${id}</b> could not be verified.\n\n${message || "Please contact us directly for assistance."}`,
+      { parse_mode: "HTML" }
     );
   }
 
