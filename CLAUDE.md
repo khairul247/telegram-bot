@@ -210,3 +210,4 @@ The Dockerfile uses `ARG CACHEBUST` + `RUN echo $CACHEBUST` to bust the layer ca
 - `GROUP_ID` must be a **supergroup** ID (starts with `-100`). Basic groups don't support `createChatInviteLink`. Convert to supergroup by enabling Topics in group settings.
 - Bot must be admin in the group with **"Invite Users via Link"** permission for the group invite feature to work.
 - Telegram Bot API cannot add users directly to groups — only invite links work.
+- **Always use `parse_mode: "HTML"` (not `"Markdown"`) for messages that include invite links.** Telegram invite links (`t.me/+xxx`) contain `+` which breaks the Markdown parser mid-message, causing the message to silently not send. HTML has no such issue.
